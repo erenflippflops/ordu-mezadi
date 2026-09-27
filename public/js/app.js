@@ -81,12 +81,17 @@ function initializeApp() {
   // Responsive handling
   window.addEventListener('resize', handleResize);
 
-  // Admin panel toggle (Press ~ key)
+  // Admin panel toggle (Press ~ key or click button)
   document.addEventListener('keydown', (e) => {
     if (e.key === '`' || e.key === '~') {
       toggleAdminPanel();
     }
   });
+
+  const adminToggleBtn = document.getElementById('admin-toggle-btn');
+  if (adminToggleBtn) {
+    adminToggleBtn.addEventListener('click', toggleAdminPanel);
+  }
 
   setupAdminPanel();
 }

@@ -1301,6 +1301,35 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 }
 
 /* ==================== ADMIN PANEL ==================== */
+.admin-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 9998;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-toggle-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.admin-toggle-btn:active {
+  transform: scale(0.95);
+}
+
 .admin-panel {
   position: fixed;
   top: 50%;
