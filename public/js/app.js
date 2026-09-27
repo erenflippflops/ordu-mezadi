@@ -547,8 +547,9 @@ function updateBidButtonStates() {
   const isMyBid = gameState.teklif?.uid === myUid;
   const canBid = gameState.faz === 'TEKLIF';
 
-  // Use engine's maksTeklif
-  const maks = window.GameEngine.maksTeklif ? window.GameEngine.maksTeklif(gameState, myUid) : 0;
+  // Calculate max bid correctly
+  const bos = 5 - myState.birlikler.length;
+  const maks = tur.tip === 'birlik' ? myState.butce - (bos - 1) : myState.butce - bos;
 
   // Update all bid buttons
   const allBidBtns = [...document.querySelectorAll('.bid-btn'), ...document.querySelectorAll('.bid-btn-desktop')];
