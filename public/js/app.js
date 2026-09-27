@@ -141,6 +141,20 @@ function startNewGame() {
     return;
   }
 
+  // Check if data is loaded
+  if (!window.GameData || !window.GameData.birlikler) {
+    showToast('Oyun verileri yüklenemedi!');
+    console.error('GameData not found or incomplete');
+    return;
+  }
+
+  console.log('GameData loaded:', {
+    birlikler: window.GameData.birlikler?.length,
+    yedekler: window.GameData.yedekler?.length,
+    kaosKartlari: window.GameData.kaosKartlari?.length,
+    modlar: window.GameData.modlar?.length
+  });
+
   const seed = generateSeed();
   const uids = [];
   for (let i = 0; i < playerCount; i++) {
@@ -149,6 +163,12 @@ function startNewGame() {
 
   try {
     gameState = window.GameEngine.oyunKur(seed, mode, era, uids);
+
+    console.log('Game state after oyunKur:', {
+      turlar: gameState.turlar?.length,
+      faz: gameState.faz,
+      players: Object.keys(gameState.durumlar).length
+    });
 
     uids.forEach((uid, i) => {
       gameState.durumlar[uid].name = playerNames[i];
