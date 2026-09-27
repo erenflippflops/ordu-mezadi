@@ -847,20 +847,46 @@ function useGas() {
 function progressTurn() {
   if (!gameState) return;
 
-  console.log('Progressing turn...');
+  console.log('Progressing turn, current phase:', gameState.faz);
 
   const now = Date.now();
-  gameState = window.GameEngine.ilerle(gameState, now);
-  currentTurnStartTime = now;
 
-  saveGame();
+  try {
+    gameState = window.GameEngine.ilerle(gameState, now);
+    currentTurnStartTime = now; // Reset timer for next turn
 
-  // Check if game ended
-  if (gameState.faz === 'SAVAS') {
-    clearInterval(timerInterval);
-    startBattle();
-  } else {
-    updateAuctionUI();
+    console.log('After ilerle, new phase:', gameState.faz, 'turn:', gameState.turIndex);
+
+    saveGame();
+
+    // Check if game ended
+    if (gameState.faz === 'SAVAS') {
+      clearInterval(timerInterval);
+      showToast('Açık artırma bitti! Savaş başlıyor...');
+      setTimeout(() => {
+        startBattle();
+      }, 2000);
+      return;
+    }
+
+    // If still in SONUC phase, wait and progress again
+    if (gameState.faz === 'SONUC') {
+      console.log('In SONUC phase, waiting 2 seconds...');
+      setTimeout(() => {
+        gameState = window.GameEngine.ilerle(gameState, Date.now());
+        currentTurnStartTime = Date.now();
+        saveGame();
+        updateAuctionUI();
+        updateAdminInfo();
+      }, 2000);
+    } else {
+      // Normal turn progression
+      updateAuctionUI();
+      updateAdminInfo();
+    }
+  } catch (error) {
+    console.error('Error in progressTurn:', error);
+    showToast('Tur ilerletme hatası: ' + error.message);
   }
 }
 
