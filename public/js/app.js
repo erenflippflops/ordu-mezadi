@@ -80,6 +80,207 @@ function initializeApp() {
 
   // Responsive handling
   window.addEventListener('resize', handleResize);
+
+  // Admin panel toggle (Press ~ key)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '`' || e.key === '~') {
+      toggleAdminPanel();
+    }
+  });
+
+  setupAdminPanel();
+}
+
+// ==================== ADMIN PANEL ====================
+
+function setupAdminPanel() {
+  const closeBtn = document.getElementById('admin-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      document.getElementById('admin-panel').classList.add('hidden');
+    });
+  }
+
+  const quickStart = document.getElementById('admin-quick-start');
+  if (quickStart) {
+    quickStart.addEventListener('click', () => {
+      adminQuickStart();
+    });
+  }
+
+  const skipTurn = document.getElementById('admin-skip-turn');
+  if (skipTurn) {
+    skipTurn.addEventListener('click', () => {
+      if (gameState) {
+        progressTurn();
+        updateAdminInfo();
+      }
+    });
+  }
+
+  const autoBid = document.getElementById('admin-auto-bid');
+  if (autoBid) {
+    autoBid.addEventListener('click', () => {
+      if (gameState && gameState.faz === 'TEKLIF') {
+        makeBid(5);
+        updateAdminInfo();
+      }
+    });
+  }
+
+  const skipToBattle = document.getElementById('admin-skip-to-battle');
+  if (skipToBattle) {
+    skipToBattle.addEventListener('click', () => {
+      adminSkipToBattle();
+    });
+  }
+
+  const setBudget = document.getElementById('admin-set-budget');
+  if (setBudget) {
+    setBudget.addEventListener('click', () => {
+      const playerIndex = parseInt(document.getElementById('admin-player-select').value);
+      const newBudget = parseInt(document.getElementById('admin-budget').value);
+
+      if (gameState) {
+        const uid = `player_${playerIndex}`;
+        if (gameState.durumlar[uid]) {
+          gameState.durumlar[uid].butce = newBudget;
+          saveGame();
+          updateAuctionUI();
+          updateAdminInfo();
+          showToast(`Oyuncu ${playerIndex + 1} bütçesi ${newBudget} olarak ayarlandı`);
+        }
+      }
+    });
+  }
+
+  const setTimer = document.getElementById('admin-set-timer');
+  if (setTimer) {
+    setTimer.addEventListener('click', () => {
+      const seconds = parseInt(document.getElementById('admin-timer').value);
+      if (gameState && gameState.faz === 'TEKLIF') {
+        currentTurnStartTime = Date.now() - (15000 - seconds * 1000);
+        showToast(`Süre ${seconds} saniyeye ayarlandı`);
+      }
+    });
+  }
+}
+
+function toggleAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  if (panel) {
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+      updateAdminInfo();
+    }
+  }
+}
+
+function updateAdminInfo() {
+  if (!gameState) return;
+
+  const turnInfo = document.getElementById('admin-turn-info');
+  const phaseInfo = document.getElementById('admin-phase-info');
+  const bidInfo = document.getElementById('admin-bid-info');
+
+  if (turnInfo) {
+    turnInfo.textContent = `${gameState.turIndex + 1}/${gameState.turlar.length}`;
+  }
+
+  if (phaseInfo) {
+    phaseInfo.textContent = gameState.faz;
+  }
+
+  if (bidInfo) {
+    if (gameState.teklif) {
+      const bidder = gameState.durumlar[gameState.teklif.uid];
+      bidInfo.textContent = `${gameState.teklif.miktar}💰 (${bidder?.name || '?'})`;
+    } else {
+      bidInfo.textContent = 'Yok';
+    }
+  }
+}
+
+function adminQuickStart() {
+  playerCount = 2;
+  playerNames = ['Test1', 'Test2'];
+
+  if (!window.GameEngine) {
+    showToast('Oyun motoru yüklenemedi!');
+    return;
+  }
+
+  const seed = generateSeed();
+  const uids = ['player_0', 'player_1'];
+
+  try {
+    gameState = window.GameEngine.oyunKur(seed, 'klasik', null, uids);
+
+    uids.forEach((uid, i) => {
+      gameState.durumlar[uid].name = playerNames[i];
+      gameState.durumlar[uid].seat = i;
+    });
+
+    saveGame();
+
+    const now = Date.now();
+    gameState = window.GameEngine.ilerle(gameState, now);
+    currentTurnStartTime = now;
+
+    showScreen('auction-screen');
+    updateAuctionUI();
+    startTimer();
+    updateAdminInfo();
+
+    showToast('Hızlı test başlatıldı!');
+  } catch (error) {
+    showToast('Hata: ' + error.message);
+    console.error(error);
+  }
+}
+
+function adminSkipToBattle() {
+  if (!gameState) {
+    showToast('Oyun başlatılmamış!');
+    return;
+  }
+
+  // Give each player some units
+  Object.keys(gameState.durumlar).forEach((uid, index) => {
+    const player = gameState.durumlar[uid];
+    player.birlikler = [];
+
+    // Give 5 random units
+    for (let i = 0; i < 5; i++) {
+      const randomUnit = window.GameData.birlikler[Math.floor(Math.random() * window.GameData.birlikler.length)];
+      player.birlikler.push({
+        id: randomUnit.id,
+        fiyat: 10,
+        kaynak: 'admin'
+      });
+    }
+  });
+
+  // Jump to end
+  gameState.turIndex = gameState.turlar.length - 1;
+  gameState.artirmaBitti = true;
+
+  // Trigger battle
+  const savasData = window.GameEngine.savas ? window.GameEngine.savas(gameState) : null;
+
+  if (!savasData) {
+    showToast('Savaş sistemi bulunamadı!');
+    return;
+  }
+
+  gameState.savas = savasData;
+  gameState.faz = 'SAVAS';
+
+  saveGame();
+  clearInterval(timerInterval);
+  startBattle();
+
+  showToast('Savaşa atlandı!');
 }
 
 function setupBidButtons() {
