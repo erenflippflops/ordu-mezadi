@@ -1,0 +1,14 @@
+{
+  "name": "ordu-mezadi",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Ordu Mezadı - Online açık artırma oyunu",
+  "main": "game-logic.js",
+  "scripts": {
+    "test": "node test-rng.js && node test-altin1.js",
+    "dev": "python -m http.server 8000"
+  },
+  "keywords": ["game", "auction", "multiplayer"],
+  "author": "LO",
+  "license": "MIT"
+}
