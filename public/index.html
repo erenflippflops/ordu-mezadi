@@ -85,6 +85,14 @@
   <!-- Auction Screen -->
   <div id="auction-screen" class="screen hidden">
 
+    <!-- Player Seat Selector -->
+    <div class="seat-selector">
+      <span class="seat-label">ŞİMDİ OYNAYAN:</span>
+      <div class="seat-buttons" id="seat-buttons">
+        <!-- Generated dynamically -->
+      </div>
+    </div>
+
     <!-- Mobile Layout -->
     <div class="mobile-layout">
       <!-- Turn Header -->
@@ -295,8 +303,15 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/game-data.js"></script>
-  <script src="js/game-bundle.js"></script>
+  <script type="module">
+    // Import the real Phase 1 engine
+    import * as GameEngine from '../motor.js';
+    import * as GameData from '../veri.js';
+
+    // Expose to window for app.js
+    window.GameEngine = GameEngine;
+    window.GameData = GameData;
+  </script>
   <script src="js/app.js"></script>
 
 </body>
