@@ -5,47 +5,118 @@ let currentTurnStartTime = 0;
 let timerInterval = null;
 let playerNames = [];
 let playerCount = 4;
-let currentSeat = 0; // Which player's turn/view
+let currentSeat = 0;
 
-// ==================== ENTRY SCREEN ====================
+// ==================== WAIT FOR DOM ====================
 
-document.getElementById('btn-new-game').addEventListener('click', () => {
-  showScreen('setup-screen');
-  setupPlayerInputs();
+document.addEventListener('DOMContentLoaded', () => {
+  initializeApp();
 });
 
-document.getElementById('btn-resume').addEventListener('click', () => {
-  const saved = localStorage.getItem('ordu-mezadi-save');
-  if (saved) {
-    gameState = JSON.parse(saved);
-    playerNames = JSON.parse(localStorage.getItem('ordu-mezadi-names') || '[]');
-    showScreen('auction-screen');
-    updateAuctionUI();
-  } else {
-    showToast('Kaydedilmiş oyun bulunamadı');
-  }
-});
+function initializeApp() {
+  console.log('App initialized');
 
-// ==================== SETUP SCREEN ====================
-
-document.querySelectorAll('input[name="player-count"]').forEach(radio => {
-  radio.addEventListener('change', (e) => {
-    playerCount = parseInt(e.target.value);
+  // Entry screen
+  document.getElementById('btn-new-game').addEventListener('click', () => {
+    showScreen('setup-screen');
     setupPlayerInputs();
   });
-});
 
-document.getElementById('game-mode').addEventListener('change', (e) => {
-  const eraGroup = document.getElementById('era-group');
-  if (e.target.value === 'donem') {
-    eraGroup.classList.remove('hidden');
-  } else {
-    eraGroup.classList.add('hidden');
+  document.getElementById('btn-resume').addEventListener('click', () => {
+    const saved = localStorage.getItem('ordu-mezadi-save');
+    if (saved) {
+      gameState = JSON.parse(saved);
+      playerNames = JSON.parse(localStorage.getItem('ordu-mezadi-names') || '[]');
+      showScreen('auction-screen');
+      currentTurnStartTime = Date.now();
+      updateAuctionUI();
+      startTimer();
+    } else {
+      showToast('Kaydedilmiş oyun bulunamadı');
+    }
+  });
+
+  // Setup screen
+  document.querySelectorAll('input[name="player-count"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      playerCount = parseInt(e.target.value);
+      setupPlayerInputs();
+    });
+  });
+
+  document.getElementById('game-mode').addEventListener('change', (e) => {
+    const eraGroup = document.getElementById('era-group');
+    if (e.target.value === 'donem') {
+      eraGroup.classList.remove('hidden');
+    } else {
+      eraGroup.classList.add('hidden');
+    }
+  });
+
+  document.getElementById('btn-start-game').addEventListener('click', startNewGame);
+
+  // Bid buttons
+  setupBidButtons();
+
+  // Battle buttons
+  document.getElementById('btn-skip-battle')?.addEventListener('click', () => {
+    battleAnimating = false;
+  });
+
+  document.getElementById('btn-next-duel')?.addEventListener('click', () => {
+    currentDuelIndex++;
+    showNextDuel();
+  });
+
+  document.getElementById('btn-new-game-results')?.addEventListener('click', () => {
+    gameState = null;
+    localStorage.removeItem('ordu-mezadi-save');
+    localStorage.removeItem('ordu-mezadi-names');
+    showScreen('entry-screen');
+  });
+
+  // Initialize player inputs
+  setupPlayerInputs();
+
+  // Responsive handling
+  window.addEventListener('resize', handleResize);
+}
+
+function setupBidButtons() {
+  // Mobile bid buttons
+  document.querySelectorAll('.bid-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const amount = parseInt(btn.dataset.amount);
+      makeBid(amount);
+    });
+  });
+
+  // Desktop bid buttons
+  document.querySelectorAll('.bid-btn-desktop').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const amount = parseInt(btn.dataset.amount);
+      makeBid(amount);
+    });
+  });
+
+  // Gas buttons
+  const mobileGas = document.getElementById('mobile-gas-btn');
+  if (mobileGas) {
+    mobileGas.addEventListener('click', useGas);
   }
-});
+
+  const desktopGas = document.getElementById('desktop-gas-btn');
+  if (desktopGas) {
+    desktopGas.addEventListener('click', useGas);
+  }
+}
+
+// ==================== SETUP ====================
 
 function setupPlayerInputs() {
   const container = document.getElementById('player-names-container');
+  if (!container) return;
+
   container.innerHTML = '';
 
   const colors = ['#3A7BD5', '#F2A33A', '#2FA897', '#E07AB8'];
@@ -62,7 +133,7 @@ function setupPlayerInputs() {
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = `Oyuncu ${i + 1}`;
-    input.value = defaultNames[i];
+    input.value = defaultNames[i] || `Oyuncu ${i + 1}`;
     input.dataset.seat = i;
 
     div.appendChild(indicator);
@@ -71,16 +142,23 @@ function setupPlayerInputs() {
   }
 }
 
-document.getElementById('btn-start-game').addEventListener('click', () => {
+function startNewGame() {
   // Get player names
   playerNames = [];
   document.querySelectorAll('.player-name-input input').forEach(input => {
-    playerNames.push(input.value.trim() || `Oyuncu ${input.dataset.seat}`);
+    playerNames.push(input.value.trim() || `Oyuncu ${parseInt(input.dataset.seat) + 1}`);
   });
 
   // Get game settings
   const mode = document.getElementById('game-mode').value;
   const era = mode === 'donem' ? document.getElementById('era-select').value : null;
+
+  // Check if GameEngine exists
+  if (!window.GameEngine) {
+    showToast('Oyun motoru yüklenemedi!');
+    console.error('GameEngine not found');
+    return;
+  }
 
   // Generate seed
   const seed = generateSeed();
@@ -109,40 +187,44 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
     gameState = window.GameEngine.ilerle(gameState, now);
     currentTurnStartTime = now;
 
+    console.log('Game started:', gameState);
+
     showScreen('auction-screen');
     updateAuctionUI();
     startTimer();
   } catch (error) {
     console.error('Game start error:', error);
-    showToast('Oyun başlatılamadı');
+    showToast('Oyun başlatılamadı: ' + error.message);
   }
-});
+}
 
-// ==================== AUCTION SCREEN ====================
+// ==================== AUCTION UI ====================
 
 function updateAuctionUI() {
   if (!gameState) return;
 
   const isMobile = window.innerWidth < 900;
 
+  console.log('Updating UI, phase:', gameState.faz, 'turn:', gameState.turIndex);
+
   if (isMobile) {
     updateMobileAuction();
   } else {
     updateDesktopAuction();
   }
-
-  // Update timer
-  updateTimer();
 }
 
 function updateMobileAuction() {
   // Turn header
-  document.getElementById('mobile-turn-current').textContent = gameState.turIndex + 1;
-  document.getElementById('mobile-turn-total').textContent = gameState.turlar.length;
+  const turnCurrent = document.getElementById('mobile-turn-current');
+  const turnTotal = document.getElementById('mobile-turn-total');
+  if (turnCurrent) turnCurrent.textContent = gameState.turIndex + 1;
+  if (turnTotal) turnTotal.textContent = gameState.turlar.length;
 
   // Current bid
   const bidAmount = gameState.teklif ? gameState.teklif.miktar : 0;
-  document.getElementById('mobile-current-bid').textContent = bidAmount > 0 ? bidAmount : '-';
+  const bidEl = document.getElementById('mobile-current-bid');
+  if (bidEl) bidEl.textContent = bidAmount > 0 ? bidAmount : '-';
 
   // Item card
   updateItemCard('mobile-item-card');
@@ -150,8 +232,10 @@ function updateMobileAuction() {
   // Player info
   const myState = gameState.durumlar[`player_${currentSeat}`];
   if (myState) {
-    document.getElementById('mobile-budget').textContent = myState.butce;
-    document.getElementById('mobile-units').textContent = `${myState.birlikler.length}/5`;
+    const budgetEl = document.getElementById('mobile-budget');
+    const unitsEl = document.getElementById('mobile-units');
+    if (budgetEl) budgetEl.textContent = myState.butce;
+    if (unitsEl) unitsEl.textContent = `${myState.birlikler.length}/5`;
   }
 
   // Update bid buttons
@@ -163,28 +247,35 @@ function updateMobileAuction() {
 
 function updateDesktopAuction() {
   // Turn info
-  document.getElementById('desktop-turn-current').textContent = gameState.turIndex + 1;
-  document.getElementById('desktop-turn-total').textContent = gameState.turlar.length;
+  const turnCurrent = document.getElementById('desktop-turn-current');
+  const turnTotal = document.getElementById('desktop-turn-total');
+  if (turnCurrent) turnCurrent.textContent = gameState.turIndex + 1;
+  if (turnTotal) turnTotal.textContent = gameState.turlar.length;
 
   // Item card
   updateItemCard('desktop-item-card');
 
   // Current bid
   const bidAmount = gameState.teklif ? gameState.teklif.miktar : 0;
-  document.getElementById('desktop-current-bid').textContent = bidAmount > 0 ? bidAmount : '-';
+  const bidEl = document.getElementById('desktop-current-bid');
+  if (bidEl) bidEl.textContent = bidAmount > 0 ? bidAmount : '-';
 
   if (gameState.teklif) {
     const bidder = gameState.durumlar[gameState.teklif.uid];
-    document.getElementById('desktop-bid-owner').textContent = bidder ? bidder.name : '';
+    const ownerEl = document.getElementById('desktop-bid-owner');
+    if (ownerEl) ownerEl.textContent = bidder ? bidder.name : '';
   } else {
-    document.getElementById('desktop-bid-owner').textContent = '';
+    const ownerEl = document.getElementById('desktop-bid-owner');
+    if (ownerEl) ownerEl.textContent = '';
   }
 
   // Player status
   const myState = gameState.durumlar[`player_${currentSeat}`];
   if (myState) {
-    document.getElementById('desktop-budget').textContent = myState.butce;
-    document.getElementById('desktop-units').textContent = `${myState.birlikler.length}/5`;
+    const budgetEl = document.getElementById('desktop-budget');
+    const unitsEl = document.getElementById('desktop-units');
+    if (budgetEl) budgetEl.textContent = myState.butce;
+    if (unitsEl) unitsEl.textContent = `${myState.birlikler.length}/5`;
   }
 
   // Update bid buttons
@@ -199,10 +290,11 @@ function updateDesktopAuction() {
 
 function updateItemCard(containerId) {
   const container = document.getElementById(containerId);
+  if (!container) return;
+
   const tur = gameState.turlar[gameState.turIndex];
 
   if (tur.olay === 'KOR_ARTIRMA' && gameState.faz === 'TEKLIF') {
-    // Blind auction - show card back
     container.innerHTML = `
       <div class="item-card card-back">
         <div class="card-back-content">
@@ -218,7 +310,10 @@ function updateItemCard(containerId) {
     const birlik = window.GameData.birlikler.find(b => b.id === tur.id) ||
                    window.GameData.yedekler.find(b => b.id === tur.id);
 
-    if (!birlik) return;
+    if (!birlik) {
+      console.error('Unit not found:', tur.id);
+      return;
+    }
 
     const kademeMap = {
       'efsane': 'EFSANE',
@@ -253,9 +348,11 @@ function updateItemCard(containerId) {
       </div>
     `;
   } else {
-    // Chaos card
     const kaos = window.GameData.kaosKartlari.find(k => k.id === tur.id);
-    if (!kaos) return;
+    if (!kaos) {
+      console.error('Chaos card not found:', tur.id);
+      return;
+    }
 
     container.innerHTML = `
       <div class="item-card chaos-card">
@@ -266,27 +363,12 @@ function updateItemCard(containerId) {
       </div>
     `;
   }
-
-  // Add event label if any
-  if (tur.olay && gameState.faz === 'TEKLIF') {
-    const eventNames = {
-      'CIFT_YA_DA_HIC': '⚠️ Çift ya da Hiç',
-      'ZORUNLU_HEDIYE': '🎁 Zorunlu Hediye',
-      'KOR_ARTIRMA': '🙈 Kör Artırma'
-    };
-    const card = container.querySelector('.item-card');
-    if (card && eventNames[tur.olay]) {
-      const banner = document.createElement('div');
-      banner.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(224, 83, 61, 0.2); border-radius: 4px; text-align: center; font-weight: 600; font-size: 14px; color: #E0533D;';
-      banner.textContent = eventNames[tur.olay];
-      card.appendChild(banner);
-    }
-  }
 }
 
 function updateBidButtons(isMobile) {
   const prefix = isMobile ? 'mobile' : 'desktop';
-  const buttons = document.querySelectorAll(isMobile ? '.bid-btn' : '.bid-btn-desktop');
+  const buttonClass = isMobile ? '.bid-btn' : '.bid-btn-desktop';
+  const buttons = document.querySelectorAll(buttonClass);
   const gasBtn = document.getElementById(`${prefix}-gas-btn`);
 
   const myUid = `player_${currentSeat}`;
@@ -294,8 +376,10 @@ function updateBidButtons(isMobile) {
   if (!myState) return;
 
   const tur = gameState.turlar[gameState.turIndex];
-  const bos = 5 - myState.birlikler.length;
-  const maks = tur.tip === 'birlik' ? myState.butce - (bos - 1) : myState.butce - bos;
+
+  // Calculate max bid using game engine
+  const maks = calculateMaxBid(myState, tur);
+
   const currentBid = gameState.teklif?.miktar || 0;
   const isMyBid = gameState.teklif?.uid === myUid;
   const canBid = gameState.faz === 'TEKLIF';
@@ -303,11 +387,24 @@ function updateBidButtons(isMobile) {
   buttons.forEach(btn => {
     const amount = parseInt(btn.dataset.amount);
     const newBid = currentBid + amount;
-    btn.disabled = !canBid || isMyBid || newBid > maks;
+    const disabled = !canBid || isMyBid || newBid > maks;
+    btn.disabled = disabled;
   });
 
-  gasBtn.disabled = myState.gazKullanildi || gameState.gaz || gameState.faz !== 'TEKLIF' ||
-                   tur.tip !== 'birlik' || tur.olay === 'ZORUNLU_HEDIYE';
+  if (gasBtn) {
+    const disabled = myState.gazKullanildi || gameState.gaz || gameState.faz !== 'TEKLIF' ||
+                     tur.tip !== 'birlik' || tur.olay === 'ZORUNLU_HEDIYE';
+    gasBtn.disabled = disabled;
+  }
+}
+
+function calculateMaxBid(player, tur) {
+  const bos = 5 - player.birlikler.length;
+  if (tur.tip === 'birlik') {
+    return player.butce - (bos - 1);
+  } else {
+    return player.butce - bos;
+  }
 }
 
 function updatePlayerPills() {
@@ -326,10 +423,9 @@ function updatePlayerPills() {
     const initial = pill.querySelector('.player-initial');
     const budget = pill.querySelector('.player-budget');
 
-    initial.textContent = player.name[0].toUpperCase();
-    budget.textContent = player.butce;
+    if (initial) initial.textContent = player.name[0].toUpperCase();
+    if (budget) budget.textContent = player.butce;
 
-    // Highlight current bidder
     if (gameState.teklif && gameState.teklif.uid === uid) {
       pill.classList.add('current-bidder');
     } else {
@@ -340,6 +436,8 @@ function updatePlayerPills() {
 
 function updateDesktopArmies() {
   const container = document.getElementById('desktop-armies');
+  if (!container) return;
+
   container.innerHTML = '';
 
   const colors = ['#3A7BD5', '#F2A33A', '#2FA897', '#E07AB8'];
@@ -405,9 +503,10 @@ function updateDesktopArmies() {
 
 function updateDesktopHistory() {
   const container = document.getElementById('desktop-history');
+  if (!container) return;
+
   container.innerHTML = '';
 
-  // Show last 10 turns in reverse order
   const entries = Object.entries(gameState.log).reverse().slice(0, 10);
 
   entries.forEach(([turIndex, log]) => {
@@ -447,8 +546,7 @@ function startTimer() {
   timerInterval = setInterval(() => {
     updateTimer();
 
-    // Auto-progress when time runs out
-    if (gameState.faz === 'TEKLIF') {
+    if (gameState && gameState.faz === 'TEKLIF') {
       const elapsed = Date.now() - currentTurnStartTime;
       if (elapsed >= 15000) {
         progressTurn();
@@ -458,12 +556,12 @@ function startTimer() {
 }
 
 function updateTimer() {
-  if (gameState.faz !== 'TEKLIF') return;
+  if (!gameState || gameState.faz !== 'TEKLIF') return;
 
   const elapsed = Date.now() - currentTurnStartTime;
   const remaining = Math.max(0, Math.ceil((15000 - elapsed) / 1000));
 
-  // Update mobile timer
+  // Mobile timer
   const mobileCountdown = document.getElementById('mobile-countdown');
   if (mobileCountdown) {
     mobileCountdown.textContent = remaining;
@@ -474,7 +572,7 @@ function updateTimer() {
     }
   }
 
-  // Update desktop timer
+  // Desktop timer
   const desktopCountdown = document.getElementById('desktop-countdown');
   if (desktopCountdown) {
     desktopCountdown.textContent = remaining;
@@ -485,7 +583,7 @@ function updateTimer() {
     }
   }
 
-  // Last 5 seconds: add red border animation to card
+  // Last 5 seconds: red border on card
   const cards = document.querySelectorAll('.item-card');
   cards.forEach(card => {
     if (remaining <= 5 && remaining > 0) {
@@ -498,32 +596,31 @@ function updateTimer() {
 
 // ==================== BID ACTIONS ====================
 
-document.querySelectorAll('.bid-btn, .bid-btn-desktop').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const amount = parseInt(btn.dataset.amount);
-    makeBid(amount);
-  });
-});
-
-document.getElementById('mobile-gas-btn').addEventListener('click', () => {
-  useGas();
-});
-
-document.getElementById('desktop-gas-btn').addEventListener('click', () => {
-  useGas();
-});
-
 function makeBid(amount) {
-  if (!gameState || gameState.faz !== 'TEKLIF') return;
+  if (!gameState || gameState.faz !== 'TEKLIF') {
+    console.log('Cannot bid: wrong phase');
+    return;
+  }
 
   const myUid = `player_${currentSeat}`;
   const now = Date.now();
+
+  console.log('Making bid:', amount, 'uid:', myUid);
 
   const result = window.GameEngine.teklifVer(gameState, myUid, amount, now);
 
   if (result.hata) {
     showToast(result.hata);
+    console.error('Bid error:', result.hata);
     return;
+  }
+
+  gameState = result.durum;
+
+  // Extend timer if bid in last 5 seconds
+  const elapsed = now - currentTurnStartTime;
+  if (elapsed > 10000) {
+    currentTurnStartTime = now - 10000; // Reset to 5 seconds remaining
   }
 
   saveGame();
@@ -541,12 +638,15 @@ function useGas() {
     return;
   }
 
+  gameState = result.durum;
   saveGame();
   updateAuctionUI();
 }
 
 function progressTurn() {
   if (!gameState) return;
+
+  console.log('Progressing turn...');
 
   const now = Date.now();
   gameState = window.GameEngine.ilerle(gameState, now);
@@ -563,7 +663,7 @@ function progressTurn() {
   }
 }
 
-// ==================== BATTLE SCREEN ====================
+// ==================== BATTLE ====================
 
 let currentDuelIndex = 0;
 let battleAnimating = false;
@@ -585,6 +685,8 @@ function showNextDuel() {
   const playerB = gameState.durumlar[duel.uidB];
 
   const container = document.getElementById('battle-duel');
+  if (!container) return;
+
   container.innerHTML = `
     <div class="battle-header">
       <div class="battle-player">
@@ -602,57 +704,15 @@ function showNextDuel() {
       </div>
     </div>
 
-    <div class="battle-armies">
-      <div class="battle-army" id="army-a"></div>
-      <div class="battle-army" id="army-b"></div>
-    </div>
-
     <div class="battle-narration" id="battle-narration"></div>
   `;
 
-  // Show armies
-  showBattleArmies(duel, playerA, playerB);
-
-  // Animate rounds
   animateBattle(duel);
 
-  document.getElementById('btn-next-duel').classList.add('hidden');
-  document.getElementById('btn-skip-battle').classList.remove('hidden');
-}
-
-function showBattleArmies(duel, playerA, playerB) {
-  const armyAContainer = document.getElementById('army-a');
-  const armyBContainer = document.getElementById('army-b');
-
-  duel.orduA.forEach(unitName => {
-    const div = document.createElement('div');
-    div.className = 'battle-unit';
-
-    const birlik = window.GameData.birlikler.find(b => b.ad === unitName) ||
-                   window.GameData.yedekler.find(b => b.ad === unitName);
-
-    div.innerHTML = `
-      <span class="battle-unit-icon">${birlik?.ikon || '⚔️'}</span>
-      <span class="battle-unit-name">${unitName}</span>
-    `;
-
-    armyAContainer.appendChild(div);
-  });
-
-  duel.orduB.forEach(unitName => {
-    const div = document.createElement('div');
-    div.className = 'battle-unit';
-
-    const birlik = window.GameData.birlikler.find(b => b.ad === unitName) ||
-                   window.GameData.yedekler.find(b => b.ad === unitName);
-
-    div.innerHTML = `
-      <span class="battle-unit-icon">${birlik?.ikon || '⚔️'}</span>
-      <span class="battle-unit-name">${unitName}</span>
-    `;
-
-    armyBContainer.appendChild(div);
-  });
+  const nextBtn = document.getElementById('btn-next-duel');
+  const skipBtn = document.getElementById('btn-skip-battle');
+  if (nextBtn) nextBtn.classList.add('hidden');
+  if (skipBtn) skipBtn.classList.remove('hidden');
 }
 
 async function animateBattle(duel) {
@@ -662,16 +722,16 @@ async function animateBattle(duel) {
   const hpBarA = document.getElementById('hp-bar-a');
   const hpBarB = document.getElementById('hp-bar-b');
 
+  if (!narration || !hpBarA || !hpBarB) return;
+
   for (let i = 0; i < duel.raundlar.length; i++) {
     if (!battleAnimating) break;
 
     const raund = duel.raundlar[i];
 
-    // Type out narration
-    await typeText(narration, `Raund ${i + 1}: ${raund.gA} vs ${raund.gB} hasar...`);
+    narration.textContent = `Raund ${i + 1}: ${raund.gA} vs ${raund.gB} hasar...`;
     await sleep(800);
 
-    // Update HP bars
     hpBarA.style.width = `${raund.canA}%`;
     hpBarA.textContent = raund.canA;
     if (raund.canA < 30) hpBarA.classList.add('low');
@@ -685,47 +745,33 @@ async function animateBattle(duel) {
     if (raund.canA === 0 || raund.canB === 0) break;
   }
 
-  // Show winner
   const winner = duel.kazanan === 'A' ? duel.uidA : duel.kazanan === 'B' ? duel.uidB : null;
   if (winner) {
     const winnerName = gameState.durumlar[winner].name;
-    await typeText(narration, `\n\n${winnerName} kazandı!`);
+    narration.textContent += `\n\n${winnerName} kazandı!`;
   } else {
-    await typeText(narration, '\n\nBerabere!');
+    narration.textContent += '\n\nBerabere!';
   }
 
   battleAnimating = false;
-  document.getElementById('btn-next-duel').classList.remove('hidden');
-  document.getElementById('btn-skip-battle').classList.add('hidden');
-}
-
-async function typeText(element, text) {
-  for (const char of text) {
-    if (!battleAnimating) break;
-    element.textContent += char;
-    await sleep(30);
-  }
+  const nextBtn = document.getElementById('btn-next-duel');
+  const skipBtn = document.getElementById('btn-skip-battle');
+  if (nextBtn) nextBtn.classList.remove('hidden');
+  if (skipBtn) skipBtn.classList.add('hidden');
 }
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-document.getElementById('btn-skip-battle').addEventListener('click', () => {
-  battleAnimating = false;
-});
-
-document.getElementById('btn-next-duel').addEventListener('click', () => {
-  currentDuelIndex++;
-  showNextDuel();
-});
-
-// ==================== RESULTS SCREEN ====================
+// ==================== RESULTS ====================
 
 function showResults() {
   showScreen('results-screen');
 
   const container = document.getElementById('final-ranking');
+  if (!container) return;
+
   container.innerHTML = '';
 
   if (!gameState.savas) return;
@@ -751,18 +797,12 @@ function showResults() {
   });
 }
 
-document.getElementById('btn-new-game-results').addEventListener('click', () => {
-  gameState = null;
-  localStorage.removeItem('ordu-mezadi-save');
-  localStorage.removeItem('ordu-mezadi-names');
-  showScreen('entry-screen');
-});
-
 // ==================== UTILITIES ====================
 
 function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  document.getElementById(screenId).classList.remove('hidden');
+  const screen = document.getElementById(screenId);
+  if (screen) screen.classList.remove('hidden');
 }
 
 function generateSeed() {
@@ -781,6 +821,8 @@ function saveGame() {
 
 function showToast(message) {
   const container = document.getElementById('toast-container');
+  if (!container) return;
+
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.textContent = message;
@@ -791,14 +833,8 @@ function showToast(message) {
   }, 3000);
 }
 
-// ==================== RESPONSIVE HANDLING ====================
-
-window.addEventListener('resize', () => {
-  if (gameState && document.getElementById('auction-screen').classList.contains('screen') && !document.getElementById('auction-screen').classList.contains('hidden')) {
+function handleResize() {
+  if (gameState && document.getElementById('auction-screen') && !document.getElementById('auction-screen').classList.contains('hidden')) {
     updateAuctionUI();
   }
-});
-
-// ==================== INITIALIZATION ====================
-
-setupPlayerInputs();
+}

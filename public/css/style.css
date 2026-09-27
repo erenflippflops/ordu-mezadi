@@ -886,8 +886,11 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     flex-shrink: 0;
+    max-height: 280px;
+    display: flex;
+    flex-direction: column;
   }
 
   .current-bid-display {
