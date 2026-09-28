@@ -177,8 +177,8 @@ function startNewGame() {
 
     saveGame();
 
-    const now = Date.now();
-    gameState = window.GameEngine.ilerle(gameState, now);
+    // Don't call ilerle immediately - show HAZIRLIK phase first
+    // The engine starts in HAZIRLIK with fazBitis set
 
     console.log('Game started:', gameState);
 
@@ -434,11 +434,10 @@ function updateItemCard(containerId) {
     }
 
     // HIDE SECRET INFO: Never show güç or kademe during auction
-    // In Kör mod, only show name and adet
+    // In Kör mod, only show name and adet (no icon, era, type, description)
     if (isKorMod) {
       container.innerHTML = `
         <div class="item-card">
-          <div class="card-icon">${birlik.ikon}</div>
           <div class="card-name">${birlik.ad}</div>
           <div class="card-stats">
             <div class="stat-item">
@@ -449,6 +448,22 @@ function updateItemCard(containerId) {
         </div>
       `;
     } else {
+      // Map era and type codes to readable labels
+      const eraLabels = {
+        'antik': 'Antik',
+        'orta': 'Orta Çağ',
+        'modern': 'Modern'
+      };
+      const typeLabels = {
+        'piyade': 'Piyade',
+        'suvari': 'Süvari',
+        'menzilli': 'Menzilli',
+        'nisanci': 'Nişancı'
+      };
+
+      const eraLabel = eraLabels[birlik.cag] || birlik.cag || '-';
+      const typeLabel = typeLabels[birlik.tip] || birlik.tip;
+
       container.innerHTML = `
         <div class="item-card">
           <div class="card-icon">${birlik.ikon}</div>
@@ -461,11 +476,11 @@ function updateItemCard(containerId) {
             </div>
             <div class="stat-item">
               <span class="stat-label">Çağ</span>
-              <span class="stat-value">${birlik.cag || '-'}</span>
+              <span class="stat-value">${eraLabel}</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">Tip</span>
-              <span class="stat-value">${birlik.tip}</span>
+              <span class="stat-value">${typeLabel}</span>
             </div>
           </div>
         </div>
