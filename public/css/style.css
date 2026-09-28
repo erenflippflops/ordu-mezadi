@@ -658,6 +658,33 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
   cursor: not-allowed;
 }
 
+.pass-btn {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  min-height: 56px;
+  background: var(--text-secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.pass-btn:hover {
+  background: #7C8293;
+}
+
+.pass-btn:active {
+  transform: scale(0.95);
+}
+
+.pass-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .gas-btn {
   font-family: var(--font-heading);
   font-size: 16px;
@@ -1028,6 +1055,35 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
   .bid-btn-desktop:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+    transform: none;
+  }
+
+  .pass-btn-desktop {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    min-height: 52px;
+    background: var(--text-secondary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .pass-btn-desktop:hover {
+    background: #7C8293;
+    transform: translateY(-2px);
+  }
+
+  .pass-btn-desktop:active {
+    transform: translateY(0);
+  }
+
+  .pass-btn-desktop:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .gas-btn-desktop {

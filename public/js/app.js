@@ -519,6 +519,21 @@ function setupBidButtons() {
     });
   });
 
+  // Pass buttons
+  const mobilePass = document.getElementById('mobile-pass-btn');
+  if (mobilePass) {
+    const newMobilePass = mobilePass.cloneNode(true);
+    mobilePass.parentNode.replaceChild(newMobilePass, mobilePass);
+    newMobilePass.addEventListener('click', makePass);
+  }
+
+  const desktopPass = document.getElementById('desktop-pass-btn');
+  if (desktopPass) {
+    const newDesktopPass = desktopPass.cloneNode(true);
+    desktopPass.parentNode.replaceChild(newDesktopPass, desktopPass);
+    newDesktopPass.addEventListener('click', makePass);
+  }
+
   // Gas buttons
   const mobileGas = document.getElementById('mobile-gas-btn');
   if (mobileGas) {
@@ -546,6 +561,7 @@ function updateBidButtonStates() {
   const currentBid = gameState.teklif?.miktar || 0;
   const isMyBid = gameState.teklif?.uid === myUid;
   const canBid = gameState.faz === 'TEKLIF';
+  const alreadyPassed = gameState.passes && gameState.passes.includes(myUid);
 
   // Calculate max bid correctly
   const bos = 5 - myState.birlikler.length;
@@ -556,7 +572,15 @@ function updateBidButtonStates() {
   allBidBtns.forEach(btn => {
     const amount = parseInt(btn.dataset.amount);
     const newBid = currentBid + amount;
-    btn.disabled = !canBid || isMyBid || newBid > maks;
+    btn.disabled = !canBid || isMyBid || newBid > maks || alreadyPassed;
+  });
+
+  // Pass buttons
+  const allPassBtns = [document.getElementById('mobile-pass-btn'), document.getElementById('desktop-pass-btn')];
+  allPassBtns.forEach(btn => {
+    if (btn) {
+      btn.disabled = !canBid || alreadyPassed || isMyBid;
+    }
   });
 
   // Gas buttons
@@ -564,7 +588,7 @@ function updateBidButtonStates() {
   allGasBtns.forEach(btn => {
     if (btn) {
       btn.disabled = myState.gazKullanildi || gameState.gaz || gameState.faz !== 'TEKLIF' ||
-                     tur.tip !== 'birlik' || tur.olay === 'ZORUNLU_HEDIYE';
+                     tur.tip !== 'birlik' || tur.olay === 'ZORUNLU_HEDIYE' || alreadyPassed;
     }
   });
 }
@@ -729,6 +753,99 @@ function makeBid(amount) {
   }
 
   // teklifVer mutates state in place, don't assign result.durum
+  // Clear passes when someone bids
+  if (!gameState.passes) gameState.passes = [];
+  gameState.passes = [];
+
+  saveGame();
+  updateAuctionUI();
+}
+
+function makePass() {
+  if (!gameState || gameState.faz !== 'TEKLIF') {
+    return;
+  }
+
+  const myUid = `player_${currentSeat}`;
+
+  // Initialize passes array if needed
+  if (!gameState.passes) {
+    gameState.passes = [];
+  }
+
+  // Check if player already passed
+  if (gameState.passes.includes(myUid)) {
+    showToast('Zaten pas geçtiniz');
+    return;
+  }
+
+  // Add this player to passes
+  gameState.passes.push(myUid);
+  console.log('Player passed:', myUid, 'Total passes:', gameState.passes.length);
+
+  const totalPlayers = Object.keys(gameState.durumlar).length;
+
+  // Case 1: All players passed → random free gift
+  if (gameState.passes.length >= totalPlayers) {
+    console.log('All players passed, giving random free gift');
+
+    // Get eligible players
+    const uygunlar = [];
+    Object.keys(gameState.durumlar).forEach(uid => {
+      if (window.GameEngine.uygunMu && window.GameEngine.uygunMu(gameState, uid)) {
+        uygunlar.push(uid);
+      }
+    });
+
+    if (uygunlar.length === 0) {
+      // Nobody can take it
+      advancePhase();
+      return;
+    }
+
+    // Pick random eligible player
+    const randomIndex = Math.floor(Math.random() * uygunlar.length);
+    const kazanan = uygunlar[randomIndex];
+    const tur = gameState.turlar[gameState.turIndex];
+
+    // Give item for free
+    const oyuncu = gameState.durumlar[kazanan];
+    if (tur.tip === 'birlik') {
+      oyuncu.birlikler.push({ id: tur.id, fiyat: 0, kaynak: 'pas' });
+    } else {
+      oyuncu.kaos.push(tur.id);
+    }
+
+    // Log it
+    gameState.log[gameState.turIndex] = {
+      sonuc: 'PAS',
+      kazanan,
+      fiyat: 0,
+      damgalar: [],
+      yaziTura: null,
+      iade: 0
+    };
+
+    showToast(`Herkes pas geçti! ${oyuncu.name} bedava aldı`);
+    gameState.passes = [];
+
+    saveGame();
+    advancePhase();
+    return;
+  }
+
+  // Case 2: 2 players, one bid and other passed → end immediately
+  if (totalPlayers === 2 && gameState.teklif && gameState.passes.length === 1) {
+    console.log('2 players: one bid, one passed → ending turn');
+    showToast('Pas geçtiniz, teklif kabul edildi');
+    gameState.passes = [];
+    saveGame();
+    advancePhase();
+    return;
+  }
+
+  // Otherwise just record the pass
+  showToast('Pas geçtiniz');
   saveGame();
   updateAuctionUI();
 }
