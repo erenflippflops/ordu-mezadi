@@ -728,7 +728,7 @@ function makeBid(amount) {
     return;
   }
 
-  gameState = result.durum;
+  // teklifVer mutates state in place, don't assign result.durum
   saveGame();
   updateAuctionUI();
 }
@@ -744,7 +744,7 @@ function useGas() {
     return;
   }
 
-  gameState = result.durum;
+  // gazVer mutates state in place, don't assign result.durum
   saveGame();
   updateAuctionUI();
 }
