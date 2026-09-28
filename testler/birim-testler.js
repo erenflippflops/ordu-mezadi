@@ -18,7 +18,7 @@ import {
   unvanlar,
   YETENEK_CARPANLARI,
   KARSI_KOYMA
-} from '../motor.js';
+} from '../public/js/motor.js';
 
 test('RNG - fnv1a hash', () => {
   const h1 = fnv1a('test');

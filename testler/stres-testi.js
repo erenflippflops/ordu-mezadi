@@ -1,6 +1,6 @@
 // Stres testi - kenar durumlar ve yoğun senaryolar
 import { oyunKur, ilerle, teklifVer, gazVer, dogrula, savas, unvanlar } from '../public/js/motor.js';
-import { birlikler, yedekler } from '../veri.js';
+import { birlikler, yedekler } from '../public/js/veri.js';
 
 console.log('🔥 STRES TESTİ BAŞLIYOR...\n');
 
