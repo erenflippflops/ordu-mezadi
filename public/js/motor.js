@@ -1096,9 +1096,9 @@ function ilerle(durum, simdi) {
 
     durum.faz = 'SONUC';
 
-    // SONUC süresi
+    // SONUC süresi: only KIMSE_ALAMAZ gets 2s, everything else gets 4s
     const log = durum.log[durum.turIndex];
-    if (log && (log.sonuc === 'KIMSE_ALAMAZ' || log.sonuc === 'ALINMADI')) {
+    if (log && log.sonuc === 'KIMSE_ALAMAZ') {
       durum.fazBitis = simdi + 2000;
     } else {
       durum.fazBitis = simdi + 4000;

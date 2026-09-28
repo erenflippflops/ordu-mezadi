@@ -327,6 +327,11 @@ function updateAuctionUI() {
 
   const isMobile = window.innerWidth < 900;
 
+  // Show stamps during SONUC phase
+  if (gameState.faz === 'SONUC') {
+    showSonucPhase();
+  }
+
   if (isMobile) {
     updateMobileAuction();
   } else {
@@ -335,6 +340,58 @@ function updateAuctionUI() {
 
   updateTimerDisplay();
   setupBidButtons();
+}
+
+function showSonucPhase() {
+  const turLog = gameState.log[gameState.turIndex];
+  if (!turLog) return;
+
+  const tur = gameState.turlar[gameState.turIndex];
+
+  // Show event banner if present
+  if (tur.olay && tur.olay !== 'YOK') {
+    const eventMessages = {
+      'KOR_ARTIRMA': '🔒 Kör Artırma',
+      'ZORUNLU_HEDIYE': '🎁 Zorunlu Hediye',
+      'CIFT_YA_DA_HIC': '🪙 Çift ya da Hiç',
+      'GAZ': '🔥 Gaz Kullanıldı'
+    };
+    const message = eventMessages[tur.olay] || tur.olay;
+    showToast(message, 2500);
+  }
+
+  // Show stamps
+  if (turLog.damgalar && turLog.damgalar.length > 0) {
+    const stampMessages = {
+      'TROLLENDİN': '🤡 TROLLENDİN!',
+      'SOYULDUN': '💸 SOYULDUN!',
+      'KELEPİR': '💰 KELEPİR!',
+      'KAPTIN_KAÇTIN': '⚡ KAPTIN KAÇTIN!'
+    };
+
+    turLog.damgalar.forEach((damga, i) => {
+      setTimeout(() => {
+        const message = stampMessages[damga] || damga;
+        showToast(message, 2000);
+      }, i * 500);
+    });
+  }
+
+  // Show result message
+  const resultMessages = {
+    'ALINMADI': 'Kimse almadı',
+    'KIMSE_ALAMAZ': 'Kimse alamaz',
+    'PAS': 'Herkes pas geçti'
+  };
+
+  if (turLog.sonuc && resultMessages[turLog.sonuc]) {
+    showToast(resultMessages[turLog.sonuc], 2000);
+  } else if (turLog.kazanan) {
+    const kazanan = gameState.durumlar[turLog.kazanan];
+    if (kazanan) {
+      showToast(`${kazanan.name} kazandı - ${turLog.fiyat}💰`, 2000);
+    }
+  }
 }
 
 function updateMobileAuction() {
@@ -578,23 +635,31 @@ function updateBidButtonStates() {
   const canBid = gameState.faz === 'TEKLIF';
   const alreadyPassed = gameState.passes && gameState.passes.includes(myUid);
 
+  // Check if player is eligible using engine's uygunMu
+  const isEligible = window.GameEngine.uygunMu ? window.GameEngine.uygunMu(gameState, myUid, tur) : true;
+
   // Calculate max bid correctly
   const bos = 5 - myState.birlikler.length;
   const maks = tur.tip === 'birlik' ? myState.butce - (bos - 1) : myState.butce - bos;
+
+  // Show ineligibility message
+  if (!isEligible && canBid) {
+    showToast('Bu turda teklif veremezsin', 3000);
+  }
 
   // Update all bid buttons
   const allBidBtns = [...document.querySelectorAll('.bid-btn'), ...document.querySelectorAll('.bid-btn-desktop')];
   allBidBtns.forEach(btn => {
     const amount = parseInt(btn.dataset.amount);
     const newBid = currentBid + amount;
-    btn.disabled = !canBid || isMyBid || newBid > maks || alreadyPassed;
+    btn.disabled = !canBid || isMyBid || newBid > maks || alreadyPassed || !isEligible;
   });
 
   // Pass buttons
   const allPassBtns = [document.getElementById('mobile-pass-btn'), document.getElementById('desktop-pass-btn')];
   allPassBtns.forEach(btn => {
     if (btn) {
-      btn.disabled = !canBid || alreadyPassed || isMyBid;
+      btn.disabled = !canBid || alreadyPassed || isMyBid || !isEligible;
     }
   });
 
@@ -603,7 +668,7 @@ function updateBidButtonStates() {
   allGasBtns.forEach(btn => {
     if (btn) {
       btn.disabled = myState.gazKullanildi || gameState.gaz || gameState.faz !== 'TEKLIF' ||
-                     tur.tip !== 'birlik' || tur.olay === 'ZORUNLU_HEDIYE' || alreadyPassed;
+                     tur.tip !== 'birlik' || tur.olay === 'ZORUNLU_HEDIYE' || alreadyPassed || !isEligible;
     }
   });
 }
