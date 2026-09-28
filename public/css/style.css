@@ -293,21 +293,25 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
 /* ==================== AUCTION SCREEN - MOBILE ==================== */
 
-/* Seat Selector */
+/* Mobile Layout Container */
+.mobile-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Seat Selector - Own Row at Top */
 .seat-selector {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  background: var(--bg-panel);
+  border-bottom: 2px solid var(--border-color);
+  padding: 8px 12px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
-  background: var(--bg-panel);
-  border: 2px solid var(--border-color);
-  border-radius: 999px;
-  padding: 6px 12px;
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
 }
 
 .seat-label {
