@@ -397,24 +397,25 @@ function hesaplaDeger(birlikId, butce) {
 
 // Damga hesaplama - Bölüm 8
 function damgaHesapla(durum, birlikId, fiyat, kritik) {
-  if (durum.mod === 'kor') return [];
-
   const mod = modlar.find(m => m.id === durum.mod);
   const deger = hesaplaDeger(birlikId, mod.butce);
   const birlik = birlikler.find(b => b.id === birlikId);
 
   const damgalar = [];
 
-  // Fiyat damgaları
-  if (birlik.kademe === 'troll_sahte' && fiyat >= 1.5 * deger) {
-    damgalar.push('TROLLENDİN');
-  } else if (fiyat >= 1.5 * deger) {
-    damgalar.push('SOYULDUN');
-  } else if (fiyat <= 0.5 * deger) {
-    damgalar.push('KELEPİR');
+  // In Kör mode, skip price stamps but still give KAPTIN_KAÇTIN
+  if (durum.mod !== 'kor') {
+    // Fiyat damgaları (only in non-Kör modes)
+    if (birlik.kademe === 'troll_sahte' && fiyat >= 1.5 * deger) {
+      damgalar.push('TROLLENDİN');
+    } else if (fiyat >= 1.5 * deger) {
+      damgalar.push('SOYULDUN');
+    } else if (fiyat <= 0.5 * deger) {
+      damgalar.push('KELEPİR');
+    }
   }
 
-  // KAPTIN KAÇTIN
+  // KAPTIN KAÇTIN (always, including Kör mode)
   if (kritik) {
     damgalar.push('KAPTIN_KAÇTIN');
   }

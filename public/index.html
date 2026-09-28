@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ordu Mezadı</title>
 
   <!-- Fonts -->
@@ -247,61 +247,9 @@
   <!-- Toast Notifications -->
   <div id="toast-container"></div>
 
-  <!-- Admin Toggle Button -->
-  <button id="admin-toggle-btn" class="admin-toggle-btn" title="Admin Panel (veya ~ tuşu)">
-    🔧
-  </button>
-
   <!-- Connection Banner -->
   <div id="connection-banner" class="connection-banner hidden">
     Bağlantı kuruluyor...
-  </div>
-
-  <!-- Admin Panel (Press ~ to toggle) -->
-  <div id="admin-panel" class="admin-panel hidden">
-    <div class="admin-header">
-      <h3>🔧 ADMIN PANEL</h3>
-      <button id="admin-close" class="admin-btn-small">✕</button>
-    </div>
-    <div class="admin-content">
-      <div class="admin-section">
-        <h4>Hızlı Testler</h4>
-        <button class="admin-btn" id="admin-quick-start">Hızlı Başlat (2 Oyuncu)</button>
-        <button class="admin-btn" id="admin-skip-turn">Turu Atla</button>
-        <button class="admin-btn" id="admin-auto-bid">Otomatik Teklif Ver</button>
-        <button class="admin-btn" id="admin-skip-to-battle">Savaşa Atla</button>
-      </div>
-
-      <div class="admin-section">
-        <h4>Bütçe Ayarı</h4>
-        <label>Oyuncu Seç:</label>
-        <select id="admin-player-select" class="admin-select">
-          <option value="0">Oyuncu 1</option>
-          <option value="1">Oyuncu 2</option>
-          <option value="2">Oyuncu 3</option>
-          <option value="3">Oyuncu 4</option>
-        </select>
-        <label>Yeni Bütçe:</label>
-        <input type="number" id="admin-budget" class="admin-input" value="100" min="0" max="1000">
-        <button class="admin-btn" id="admin-set-budget">Bütçeyi Ayarla</button>
-      </div>
-
-      <div class="admin-section">
-        <h4>Oyun Durumu</h4>
-        <div class="admin-info">
-          <span>Tur: <strong id="admin-turn-info">-</strong></span>
-          <span>Faz: <strong id="admin-phase-info">-</strong></span>
-          <span>Teklif: <strong id="admin-bid-info">-</strong></span>
-        </div>
-      </div>
-
-      <div class="admin-section">
-        <h4>Zamanlayıcı</h4>
-        <label>Süre (saniye):</label>
-        <input type="number" id="admin-timer" class="admin-input" value="5" min="1" max="60">
-        <button class="admin-btn" id="admin-set-timer">Süreyi Ayarla</button>
-      </div>
-    </div>
   </div>
 
   <!-- Scripts -->
