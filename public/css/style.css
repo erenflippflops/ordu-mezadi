@@ -804,11 +804,11 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
   .desktop-layout {
     display: grid;
-    grid-template-columns: 280px 1fr 280px;
-    gap: var(--spacing-lg);
+    grid-template-columns: 260px 1fr 260px;
+    gap: 12px;
     width: 100%;
     height: 100%;
-    padding: var(--spacing-lg);
+    padding: 12px;
     overflow: hidden;
   }
 
@@ -817,7 +817,7 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -831,12 +831,12 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
   .column-title {
     font-family: var(--font-heading);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-secondary);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 10px;
     flex-shrink: 0;
   }
 
@@ -937,17 +937,18 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-md);
+    padding: 10px 12px;
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: 12px;
     flex-shrink: 0;
+    min-height: 50px;
   }
 
   .turn-label {
     font-family: var(--font-heading);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.1em;
     color: var(--text-secondary);
@@ -955,7 +956,7 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
   .countdown-desktop {
     font-family: var(--font-heading);
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--text-primary);
   }
@@ -970,33 +971,34 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: 12px;
+    min-height: 0;
   }
 
   .item-card-desktop .item-card {
-    max-width: 400px;
-    max-height: 560px;
+    max-width: 360px;
+    max-height: 500px;
   }
 
   .bid-section-desktop {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
+    padding: 12px;
     flex-shrink: 0;
-    max-height: 280px;
+    max-height: 240px;
     display: flex;
     flex-direction: column;
   }
 
   .current-bid-display {
     text-align: center;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 10px;
   }
 
   .bid-label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1006,29 +1008,29 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
   .bid-amount-large {
     font-family: var(--font-heading);
-    font-size: 48px;
+    font-size: 40px;
     font-weight: 700;
     color: var(--gold);
     display: block;
   }
 
   .bid-owner {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-secondary);
   }
 
   .bid-controls-desktop {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
   .bid-btn-desktop {
     font-family: var(--font-heading);
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
-    min-height: 60px;
+    min-height: 52px;
     background: var(--gold);
     color: var(--ink);
     border: none;
@@ -1073,7 +1075,7 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
   .player-status-desktop {
     display: flex;
     justify-content: space-around;
-    padding-top: var(--spacing-md);
+    padding-top: 10px;
     border-top: 1px solid var(--border-color);
   }
 
@@ -1083,17 +1085,17 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
   .status-label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text-secondary);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
 
   .status-value {
     font-family: var(--font-heading);
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text-primary);
   }
@@ -1290,6 +1292,110 @@ h1, h2, h3, .title, .screen-title, .turn-number, .countdown, .bid-amount-large {
 
 .ranking-list {
   margin-bottom: var(--spacing-xl);
+}
+
+/* ==================== RESULTS SCREEN ==================== */
+
+/* Duel Results Section */
+.duels-summary {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.duels-summary h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.duel-result {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.duel-number {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.duel-players {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.duel-winner {
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* Ifşa Section */
+.ifsa-summary {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.ifsa-summary h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ifsa-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.ifsa-player {
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 100px;
+}
+
+.ifsa-card {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+/* Final Ranking Section */
+.final-ranking-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.final-ranking-section h3 {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: var(--spacing-lg);
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .rank-item {
