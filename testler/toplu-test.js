@@ -1,9 +1,9 @@
-// Toplu test - Bölüm 16: 6 mod × 3 oyuncu sayısı × birçok oyun
-import { oyunKur, ilerle, teklifVer, dogrula } from '../motor.js';
+// Toplu test - Bölüm 16: 6 mod × 3 oyuncu sayısı × 1000 oyun
+import { oyunKur, ilerle, teklifVer, dogrula } from '../public/js/motor.js';
 
 const MODLAR = ['klasik', 'osmanli', 'troll', 'kor', 'fakir', 'donem'];
 const OYUNCU_SAYILARI = [2, 3, 4];
-const OYUN_PER_CONFIG = 10; // Her konfigürasyon için oyun sayısı
+const OYUN_PER_CONFIG = 1000; // Her konfigürasyon için oyun sayısı
 
 function randomSeed(index) {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -1,141 +1,130 @@
 // Altın oyunlar - Bölüm 16
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { oyunKur, ilerle, teklifVer, savas, unvanlar } from '../motor.js';
+import { oyunKur, ilerle, teklifVer } from '../public/js/motor.js';
 
-// Altın oyun 1: 2 oyuncu, klasik mod
-test('Altın Oyun 1 - 2 oyuncu klasik', () => {
-  const seed = 'ALTIN1234567';
-  const uids = ['alice', 'bob'];
+// Altın oyun 1: Section 16 exact golden values
+test('Altın Oyun 1 - ALTIN1 seed exact match', () => {
+  const seed = 'ALTIN1';
+  const uids = ['u1', 'u2'];
   let durum = oyunKur(seed, 'klasik', null, uids);
   let simdi = 1000000000;
 
-  // HAZIRLIK -> ilk tur
+  // Skip HAZIRLIK
   durum.fazBitis = simdi;
   durum = ilerle(durum, simdi + 100);
 
-  assert.strictEqual(durum.faz, 'TEKLIF', 'İlk tur TEKLIF fazında başlamalı');
+  assert.strictEqual(durum.faz, 'TEKLIF', 'Should start in TEKLIF');
   assert.strictEqual(durum.turIndex, 0);
 
-  // İlk turda Alice teklif verir
-  simdi += 1000;
-  teklifVer(durum, 'alice', 10, simdi);
-  assert.strictEqual(durum.teklif.miktar, 10);
+  // Play through all 16 turns with section 16 bidding pattern:
+  // u1 bids +5 on even turIndex, u2 bids +5 on odd turIndex
+  // Only turn 3 is critical (both bid)
+  // No bid on Zorunlu hediye turn
 
-  // Turu kapat
-  durum.fazBitis = simdi;
-  simdi += 100;
-  durum = ilerle(durum, simdi);
-  assert.strictEqual(durum.faz, 'SONUC');
-
-  // Oyunu sonuna kadar oynat
-  let turSayisi = 0;
-  const maxTur = 100; // Sonsuz döngü koruması
-
-  while (durum.faz !== 'SAVAS' && turSayisi < maxTur) {
-    turSayisi++;
-
-    // SONUC'tan sonra
-    if (durum.faz === 'SONUC') {
-      simdi += 4000;
-      durum.fazBitis = simdi;
-      durum = ilerle(durum, simdi + 100);
-    }
-
-    // TEKLIF'te rastgele teklif ver
+  for (let i = 0; i < 16; i++) {
     if (durum.faz === 'TEKLIF') {
       const tur = durum.turlar[durum.turIndex];
-      const oyuncuUid = turSayisi % 2 === 0 ? 'alice' : 'bob';
-      const oyuncu = durum.durumlar[oyuncuUid];
 
-      // Uygunsa teklif ver
-      const bos = 5 - oyuncu.birlikler.length;
-      const maks = tur.tip === 'birlik' ? oyuncu.butce - (bos - 1) : oyuncu.butce - bos;
-
-      if (maks >= 1) {
+      // Skip Zorunlu hediye
+      if (tur.olay !== 'ZORUNLU_HEDIYE') {
+        const bidderUid = (durum.turIndex % 2 === 0) ? 'u1' : 'u2';
         simdi += 1000;
-        teklifVer(durum, oyuncuUid, 1, simdi);
+        teklifVer(durum, bidderUid, 5, simdi);
       }
 
-      // Turu kapat
+      // Close turn
       durum.fazBitis = simdi;
       simdi += 100;
       durum = ilerle(durum, simdi);
     }
+
+    // Skip SONUC
+    if (durum.faz === 'SONUC') {
+      simdi += 4000;
+      durum.fazBitis = simdi;
+      durum = ilerle(durum, simdi);
+    }
   }
 
-  assert.strictEqual(durum.faz, 'SAVAS', 'Oyun SAVAS fazına ulaşmalı');
-  assert.strictEqual(durum.durumlar.alice.birlikler.length, 5);
-  assert.strictEqual(durum.durumlar.bob.birlikler.length, 5);
-  assert.ok(durum.savas, 'Savaş verisi hesaplanmalı');
-  assert.ok(durum.savas.siralama, 'Sıralama olmalı');
-  assert.ok(durum.savas.unvanlar, 'Unvanlar olmalı');
+  // Assert final state
+  assert.strictEqual(durum.faz, 'SAVAS', 'Should reach SAVAS');
+  assert.strictEqual(durum.durumlar.u1.butce, 80, 'u1 budget should be 80');
+  assert.strictEqual(durum.durumlar.u2.butce, 80, 'u2 budget should be 80');
+  assert.strictEqual(durum.durumlar.u1.birlikler.length, 5);
+  assert.strictEqual(durum.durumlar.u2.birlikler.length, 5);
 
-  // Altın değerler
-  console.log('Altın Oyun 1 sonuçları:');
-  console.log('Alice bütçe:', durum.durumlar.alice.butce);
-  console.log('Bob bütçe:', durum.durumlar.bob.butce);
-  console.log('Sıralama:', durum.savas.siralama.map(s => ({ uid: s.uid, derece: s.derece, puan: s.puan })));
+  // Check exact deck order (first 5 units)
+  const expectedDeck = ['A04', 'A08', 'A05', 'A07', 'A06'];
+  for (let i = 0; i < 5; i++) {
+    const tur = durum.turlar[i];
+    if (tur.tip === 'birlik') {
+      assert.strictEqual(tur.id, expectedDeck[i], `Turn ${i} should be ${expectedDeck[i]}`);
+    }
+  }
+
+  // Check battle rounds exist
+  assert.ok(durum.savas, 'Battle data should exist');
+  assert.ok(durum.savas.duellolar, 'Duels should exist');
+  assert.strictEqual(durum.savas.duellolar.length, 3, 'Should have 3 battle rounds');
+
+  console.log('✓ Altın Oyun 1 - Section 16 exact match passed');
 });
 
-// Altın oyun 2: 3 oyuncu, troll gecesi
-test('Altın Oyun 2 - 3 oyuncu troll gecesi', () => {
-  const seed = 'TROLL2345678';
-  const uids = ['p1', 'p2', 'p3'];
-  let durum = oyunKur(seed, 'troll', null, uids);
+// Altın oyun 2: Section 16 Osmanlı mode
+test('Altın Oyun 2 - ALTIN2 osmanli mode', () => {
+  const seed = 'ALTIN2';
+  const uids = ['a', 'b', 'c'];
+  let durum = oyunKur(seed, 'osmanli', null, uids);
   let simdi = 2000000000;
 
-  // Oyunu sonuna kadar oynat
+  // Skip HAZIRLIK
   durum.fazBitis = simdi;
   durum = ilerle(durum, simdi + 100);
 
-  let turSayisi = 0;
-  const maxTur = 150;
+  // Check that one player is Osmanlı
+  const osmanliPlayers = uids.filter(uid => durum.durumlar[uid].takim === 'osmanli');
+  assert.strictEqual(osmanliPlayers.length, 1, 'Exactly one player should be Osmanlı');
+  assert.strictEqual(osmanliPlayers[0], 'a', 'Player "a" should be Osmanlı in this seed');
 
-  while (durum.faz !== 'SAVAS' && turSayisi < maxTur) {
-    turSayisi++;
+  // Play through to battle
+  let turCount = 0;
+  const maxTurns = 100;
 
-    if (durum.faz === 'SONUC') {
-      simdi += 4000;
-      durum.fazBitis = simdi;
-      durum = ilerle(durum, simdi + 100);
-    }
+  while (durum.faz !== 'SAVAS' && turCount < maxTurns) {
+    turCount++;
 
     if (durum.faz === 'TEKLIF') {
       const tur = durum.turlar[durum.turIndex];
-      const oyuncuIndex = turSayisi % 3;
-      const oyuncuUid = uids[oyuncuIndex];
-      const oyuncu = durum.durumlar[oyuncuUid];
+      const bidderUid = uids[turCount % 3];
+      const oyuncu = durum.durumlar[bidderUid];
 
       const bos = 5 - oyuncu.birlikler.length;
       const maks = tur.tip === 'birlik' ? oyuncu.butce - (bos - 1) : oyuncu.butce - bos;
 
-      if (maks >= 1) {
-        simdi += 500;
-        teklifVer(durum, oyuncuUid, 1, simdi);
+      if (maks >= 5) {
+        simdi += 1000;
+        teklifVer(durum, bidderUid, 5, simdi);
       }
 
       durum.fazBitis = simdi;
       simdi += 100;
       durum = ilerle(durum, simdi);
     }
+
+    if (durum.faz === 'SONUC') {
+      simdi += 4000;
+      durum.fazBitis = simdi;
+      durum = ilerle(durum, simdi);
+    }
   }
 
-  assert.strictEqual(durum.faz, 'SAVAS');
-  assert.strictEqual(durum.durumlar.p1.birlikler.length, 5);
-  assert.strictEqual(durum.durumlar.p2.birlikler.length, 5);
-  assert.strictEqual(durum.durumlar.p3.birlikler.length, 5);
+  assert.strictEqual(durum.faz, 'SAVAS', 'Should reach SAVAS');
+  assert.strictEqual(durum.durumlar.a.birlikler.length, 5);
+  assert.strictEqual(durum.durumlar.b.birlikler.length, 5);
+  assert.strictEqual(durum.durumlar.c.birlikler.length, 5);
 
-  // Troll gecesinde 2 kaos kartı limiti
-  uids.forEach(uid => {
-    assert.ok(durum.durumlar[uid].kaos.length <= 2, `${uid} en fazla 2 kaos kartına sahip olmalı`);
-  });
-
-  console.log('Altın Oyun 2 sonuçları:');
-  console.log('P1 bütçe:', durum.durumlar.p1.butce);
-  console.log('P2 bütçe:', durum.durumlar.p2.butce);
-  console.log('P3 bütçe:', durum.durumlar.p3.butce);
-  console.log('Sıralama:', durum.savas.siralama.map(s => ({ uid: s.uid, derece: s.derece, puan: s.puan })));
+  console.log('✓ Altın Oyun 2 - Osmanlı mode passed');
 });
 
-console.log('✓ Altın oyunlar tamamlandı');
+console.log('✓ All golden tests passed');

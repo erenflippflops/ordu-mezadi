@@ -1,8 +1,8 @@
 // Temel birim testleri
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { fnv1a, mulberry32, rngFor, shuffle } from '../rastgele.js';
-import { birlikler, yedekler, kaosKartlari, modlar } from '../veri.js';
+import { fnv1a, mulberry32, rngFor, shuffle } from '../public/js/rastgele.js';
+import { birlikler, yedekler, kaosKartlari, modlar } from '../public/js/veri.js';
 import {
   normalize,
   dogrula,

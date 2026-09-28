@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Ordu Mezadı - Online açık artırma oyunu",
-  "main": "game-logic.js",
+  "main": "public/js/motor.js",
   "scripts": {
-    "test": "node test-rng.js && node test-altin1.js",
-    "dev": "python -m http.server 8000"
+    "test": "node --test testler/*.js",
+    "dev": "python -m http.server 8000 --directory public"
   },
   "keywords": ["game", "auction", "multiplayer"],
   "author": "LO",

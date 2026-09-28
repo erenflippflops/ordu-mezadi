@@ -1,5 +1,5 @@
 // Kapsamlı test - tüm senaryolar
-import { oyunKur, ilerle, teklifVer, gazVer, dogrula } from '../motor.js';
+import { oyunKur, ilerle, teklifVer, gazVer, dogrula } from '../public/js/motor.js';
 import { birlikler } from '../veri.js';
 
 console.log('🔍 KAPSAMLI TEST BAŞLIYOR...\n');
